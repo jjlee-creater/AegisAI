@@ -18,7 +18,7 @@ public class ApiController {
         this.apiService=apiService;
     }
 
-    @PostMapping("/scan-vulnerability")
+    @PostMapping("/api/scan-vulnerability")
     public Flux<VulnerabilitiesDto> requestApi(@RequestBody AnalysisDto analysisDto) {
 
         return apiService.request(analysisDto);
