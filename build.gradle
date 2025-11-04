@@ -53,13 +53,16 @@ def webappDir = "$projectDir/src/main/aegis-ai-frontend"
 sourceSets {
     main {
         resources {
-            srcDirs = ["$webappDir/build", "$projectDir/src/main/resources"]
+            srcDirs = ["$projectDir/src/main/resources"]
         }
     }
 }
 
 processResources {
     dependsOn "buildReact"
+    from("$webappDir/dist") {
+        into "static"  // -> 최종 빌드 결과물의 'static' 폴더로 들어감
+    }
 }
 
 tasks.register('buildReact', Exec) {

@@ -10,7 +10,7 @@ public class MainController {
 
     @GetMapping("/")
     public String main(){
-    return "백엔드 서버";
+    return "/index";
     }
 
 }
