@@ -15,7 +15,7 @@ public class VulnerabilitiesDto {
 
     private String codeSnippet;
 
-    private String severity; // "High", "Medium", "Low"
+    private String severity; // "Critical", "High", "Medium", "Low"
 
     private String cweLink;
 }

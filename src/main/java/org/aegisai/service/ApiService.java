@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Service
 public class ApiService {
@@ -17,17 +17,18 @@ public class ApiService {
     @Autowired
     public ApiService(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
-                .baseUrl("https://api.com")
+                .baseUrl("https://alayna-distinctionless-harris.ngrok-free.app")
                 .build();
     }
 
-    public Flux<VulnerabilitiesDto> request(AnalysisDto analysisDto) {
+    public List<VulnerabilitiesDto> request(AnalysisDto analysisDto) {
 
         return webClient.post()
-                .uri("/scan-endpoint")
+                .uri("/scan")
                 .bodyValue(analysisDto)
                 .retrieve() // 응답 수신
-                .bodyToFlux(VulnerabilitiesDto.class);
+                .bodyToFlux(VulnerabilitiesDto.class)
+                .collectList().block();
     }
 
 }

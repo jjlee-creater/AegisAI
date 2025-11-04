@@ -60,12 +60,12 @@ public class Analysis {
     @Builder.Default
     private List<Vulnerability> vulnerabilities = new ArrayList<>();
 
-    // 비즈니스 로직: Vulnerability 추가
+    /*// 비즈니스 로직: Vulnerability 추가
     public void addVulnerability(Vulnerability vulnerability) {
         vulnerabilities.add(vulnerability);
         vulnerability.setAnalysis(this);
     }
-
+*/
     // 비즈니스 로직: 분석 완료 처리
     public void completeAnalysis(int high, int medium, int low) {
         this.status = COMPLETED;
