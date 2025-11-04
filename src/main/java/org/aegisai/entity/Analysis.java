@@ -34,7 +34,7 @@ public class Analysis {
     private User user;
 */
     @Enumerated(EnumType.STRING)
-    private AnalysisStatus status = PENDING;
+    private AnalysisStatus status;
 
     @CreationTimestamp
     @Column(name = "submitted_at", updatable = false)
