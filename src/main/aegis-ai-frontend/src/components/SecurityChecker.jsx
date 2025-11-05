@@ -15,16 +15,68 @@ export default function EnhancedSecurityChecker() {
   const lineNumbersRef = React.useRef(null);
   const textareaRef = React.useRef(null);
 
-  // 실시간 토큰 및 문자 카운터
-  useEffect(() => {
-    const tokens = inputCode.split(/\s+/).filter(t => t.length > 0).length;
-    const chars = inputCode.length;
-    setTokenCount(tokens);
-    setCharacterCount(chars);
-    
-    // 실시간 취약점 라인 감지
+  // 실시간 토큰 및 문자 카운터 수정
+useEffect(() => {
+  const debounceMs = 300;
+  let mounted = true;
+  const timer = setTimeout(async () => {
+    const charsLocal = inputCode.length;
+    // UX: 문자수는 즉시 반영
+    setCharacterCount(charsLocal);
+
+    if (!inputCode || inputCode.trim().length === 0) {
+      setTokenCount(0);
+      // 기존 취약점 감지는 그대로 실행
+      detectVulnerableLinesRealtime();
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/token-count", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: inputCode,
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+
+      // 유연하게 키 처리: tokens | token_count, chars | char_count
+      const tokens = (data.tokens ?? data.token_count) ?? null;
+      const charsFromServer = (data.chars ?? data.char_count) ?? null;
+
+      if (!mounted) return;
+
+      if (tokens !== null) setTokenCount(tokens);
+      else {
+        // 서버가 토큰을 안줬으면 폴백
+        const fallback = inputCode.split(/\s+/).filter(t => t.length > 0).length;
+        setTokenCount(fallback);
+      }
+
+      if (charsFromServer !== null) setCharacterCount(charsFromServer);
+      else setCharacterCount(charsLocal);
+
+    } catch (err) {
+      console.error("토큰 카운트 실패:", err);
+      // 네트워크/서버 실패 시 폴백
+      const fallback = inputCode.split(/\s+/).filter(t => t.length > 0).length;
+      if (mounted) {
+        setTokenCount(fallback);
+        setCharacterCount(inputCode.length);
+      }
+    }
+
+    // 기존 취약점 라인 감지
     detectVulnerableLinesRealtime();
-  }, [inputCode, language]);
+  }, debounceMs);
+
+  return () => {
+    mounted = false;
+    clearTimeout(timer);
+  };
+}, [inputCode, language]);
 
   // 실시간 취약 라인 감지
   const detectVulnerableLinesRealtime = () => {
