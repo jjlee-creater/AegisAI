@@ -30,7 +30,6 @@ public class ApiController {
         return apiService.request(analysisDto);
     }
 
-    // ✅ 이 부분을 클래스 내부에 포함시켜야 합니다
     @PostMapping("/api/token-count")
     public ResponseEntity<Map> countTokens(@RequestBody String code) {
         String url = "http://localhost:8000/token-count"; // Python 서버 주소
