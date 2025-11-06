@@ -96,12 +96,15 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
-// 코드 취약점 스캔 API
-export const scanVulnerability = async (code, language) => {
+// 코드 취약점 스캔 API (Java 고정)
+export const scanVulnerability = async (code, language = 'Java') => {
   try {
+    // Java로 고정
+    const fixedLanguage = 'Java';
+    
     const data = await apiRequest('/api/scan-vulnerability', {
       method: 'POST',
-      body: JSON.stringify({ code, language }),
+      body: JSON.stringify({ code, language: fixedLanguage }),
     });
     
     return {

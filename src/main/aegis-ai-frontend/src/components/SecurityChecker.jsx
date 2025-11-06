@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Code, Download, TrendingUp, Zap, ChevronDown, Info } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Code, Download, TrendingUp, Zap, ChevronDown, Info, X, Lightbulb } from 'lucide-react';
 import { scanVulnerability, getTokenCount } from '../api/api';
 
 export default function EnhancedSecurityChecker() {
   const [inputCode, setInputCode] = useState('');
-  const [language, setLanguage] = useState('Java');
+  const language = 'Java'; // Java로 고정 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [tokenCount, setTokenCount] = useState(0);
@@ -15,8 +15,17 @@ export default function EnhancedSecurityChecker() {
   const [notificationMessage, setNotificationMessage] = useState('');
   const lineNumbersRef = React.useRef(null);
   const textareaRef = React.useRef(null);
+  
+  // 🆕 XAI 팝업 상태
+  const [xaiPopup, setXaiPopup] = useState({
+    show: false,
+    type: '', // 'detection' or 'fix'
+    title: '',
+    content: '',
+    modelInfo: ''
+  });
 
-  // 실시간 토큰 및 문자 카운터 수정
+  // 실시간 토큰 및 문자 카운터
   useEffect(() => {
     const debounceMs = 300;
     let mounted = true;
@@ -31,7 +40,6 @@ export default function EnhancedSecurityChecker() {
       }
 
       try {
-        // 통합 API 사용
         const result = await getTokenCount(inputCode);
         
         if (!mounted) return;
@@ -62,7 +70,7 @@ export default function EnhancedSecurityChecker() {
     };
   }, [inputCode, language]);
 
-  // 실시간 취약 라인 감지
+  // 실시간 취약 라인 감지 (Java 전용)
   const detectVulnerableLinesRealtime = () => {
     const lines = inputCode.split('\n');
     const vulnLines = new Set();
@@ -72,24 +80,16 @@ export default function EnhancedSecurityChecker() {
       const lineNum = idx + 1;
       let isVulnerable = false;
       
-      if (language === 'Java') {
-        if ((line.includes('Statement') && line.includes('+')) || 
-            line.includes('executeQuery') && inputCode.includes('+')) {
-          isVulnerable = true;
-        }
-        if (line.includes('md5') || line.includes('MD5') || line.includes('SHA1')) {
-          isVulnerable = true;
-        }
-        if (line.includes('printStackTrace')) {
-          isVulnerable = true;
-        }
-      } else if (language === 'C' || language === 'C++') {
-        if (line.includes('strcpy') || line.includes('gets(')) {
-          isVulnerable = true;
-        }
-        if (line.includes('malloc') && !inputCode.includes('free')) {
-          isVulnerable = true;
-        }
+      // Java 취약점 패턴 감지
+      if ((line.includes('Statement') && line.includes('+')) || 
+          line.includes('executeQuery') && inputCode.includes('+')) {
+        isVulnerable = true;
+      }
+      if (line.includes('md5') || line.includes('MD5') || line.includes('SHA1')) {
+        isVulnerable = true;
+      }
+      if (line.includes('printStackTrace')) {
+        isVulnerable = true;
       }
       
       if (isVulnerable) {
@@ -103,6 +103,55 @@ export default function EnhancedSecurityChecker() {
     setSafeLines(okLines);
   };
 
+  // 🆕 XAI 설명 생성 (임시 더미 데이터)
+  const generateXAIExplanation = (vuln, type) => {
+    if (type === 'detection') {
+      return {
+        modelInfo: '🤖 GraphCodeBERT + Gemini API',
+        title: '왜 이 코드가 취약한가요?',
+        content: `GraphCodeBERT 모델이 코드의 추상 구문 트리(AST)를 분석한 결과, 이 패턴은 ${vuln.type} 취약점의 전형적인 특징을 보입니다.\n\n` +
+                 `🔍 탐지 근거:\n` +
+                 `• 사용자 입력값이 검증 없이 직접 사용됨\n` +
+                 `• 안전하지 않은 함수 호출 패턴 발견\n` +
+                 `• 보안 가이드라인 위반 확인\n\n` +
+                 `💡 Gemini 분석:\n"${vuln.description}"`
+      };
+    } else {
+      return {
+        modelInfo: '🛠️ CodeT5 + Gemini API',
+        title: '어떻게 수정했나요?',
+        content: `CodeT5 모델이 10만 개 이상의 보안 패치 사례를 학습하여 최적의 수정 방안을 생성했습니다.\n\n` +
+                 `✅ 수정 전략:\n` +
+                 `• ${vuln.recommendation}\n` +
+                 `• 업계 표준 보안 패턴 적용\n` +
+                 `• 성능 영향 최소화\n\n` +
+                 `💡 Gemini 설명:\n"${vuln.impact} 이를 방지하기 위해 안전한 API를 사용하도록 코드를 재구성했습니다."`
+      };
+    }
+  };
+
+  // 🆕 XAI 팝업 표시 핸들러
+  const showXAIExplanation = (vuln, type) => {
+    const explanation = generateXAIExplanation(vuln, type);
+    setXaiPopup({
+      show: true,
+      type: type,
+      title: explanation.title,
+      content: explanation.content,
+      modelInfo: explanation.modelInfo
+    });
+    
+    // 5초 후 자동 닫기
+    setTimeout(() => {
+      setXaiPopup(prev => ({ ...prev, show: false }));
+    }, 8000);
+  };
+
+  // 🆕 XAI 팝업 닫기
+  const closeXAIPopup = () => {
+    setXaiPopup({ show: false, type: '', title: '', content: '', modelInfo: '' });
+  };
+
   // 취약점 분석
   const analyzeCode = async () => {
     if (!inputCode.trim()) {
@@ -113,7 +162,6 @@ export default function EnhancedSecurityChecker() {
     setIsAnalyzing(true);
     
     try {
-      // 통합 API 호출
       const result = await scanVulnerability(inputCode, language);
       
       if (result.success && result.data) {
@@ -141,7 +189,7 @@ export default function EnhancedSecurityChecker() {
       alert(`백엔드 서버와 연결할 수 없습니다.\n오류: ${error.message || error}\n\n데모 모드로 실행합니다.`);
     }
     
-    // 데모 모드 (백엔드 연결 실패 시)
+    // 데모 모드 (기존 코드 유지)
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     const vulnerabilities = [];
@@ -180,7 +228,7 @@ export default function EnhancedSecurityChecker() {
           reference: 'NIST - Deprecated Hash Algorithms'
         });
       }
-
+      
       if (inputCode.includes('printStackTrace')) {
         const lineNum = inputCode.split('\n').findIndex(l => l.includes('printStackTrace')) + 1;
         const badCodeLine = inputCode.split('\n')[lineNum - 1];
@@ -189,213 +237,65 @@ export default function EnhancedSecurityChecker() {
           title: '민감한 정보 노출',
           severity: 'medium',
           line: lineNum,
-          description: 'printStackTrace()는 시스템 내부 구조를 노출시켜 공격자에게 유용한 정보를 제공합니다.',
-          impact: '공격자가 애플리케이션의 내부 구조를 파악하여 더 정교한 공격을 계획할 수 있습니다.',
-          recommendation: 'Log4j, SLF4J 같은 로깅 프레임워크를 사용하고, 로그 레벨을 적절히 설정하세요.',
+          description: 'printStackTrace()는 시스템 경로, 버전 정보 등 민감한 정보를 노출시킵니다.',
+          impact: '공격자가 시스템 구조를 파악하여 표적 공격을 수행할 수 있습니다.',
+          recommendation: '로깅 프레임워크(Log4j, SLF4J)를 사용하고, 프로덕션 환경에서는 상세 에러를 숨기세요.',
           originalCode: badCodeLine.trim(),
-          fixedCode: 'logger.error("작업 실패: {}", e.getMessage());',
-          reference: 'OWASP - Error Handling'
-        });
-      }
-    } else if (language === 'C' || language === 'C++') {
-      if (inputCode.includes('strcpy') || inputCode.includes('gets')) {
-        const lineNum = inputCode.split('\n').findIndex(l => l.includes('strcpy') || l.includes('gets')) + 1;
-        const badCodeLine = inputCode.split('\n')[lineNum - 1];
-        vulnerabilities.push({
-          type: 'CWE-120',
-          title: 'Buffer Overflow 취약점',
-          severity: 'critical',
-          line: lineNum,
-          description: 'strcpy()와 gets()는 버퍼 크기를 확인하지 않아 버퍼 오버플로우를 일으킬 수 있습니다.',
-          impact: '공격자가 메모리를 덮어써서 프로그램의 실행 흐름을 조작하거나 악성 코드를 주입할 수 있습니다.',
-          recommendation: 'strncpy(), fgets() 같은 크기 제한 함수를 사용하거나 std::string을 사용하세요.',
-          originalCode: badCodeLine.trim(),
-          fixedCode: badCodeLine.includes('strcpy') 
-            ? 'strncpy(dest, src, sizeof(dest) - 1);\ndest[sizeof(dest) - 1] = \'\\0\';'
-            : 'fgets(buffer, sizeof(buffer), stdin);',
-          reference: 'CWE-120 - Buffer Copy without Checking Size of Input'
-        });
-      }
-
-      if (inputCode.includes('malloc') && !inputCode.includes('free')) {
-        const lineNum = inputCode.split('\n').findIndex(l => l.includes('malloc')) + 1;
-        const badCodeLine = inputCode.split('\n')[lineNum - 1];
-        vulnerabilities.push({
-          type: 'CWE-401',
-          title: 'Memory Leak (메모리 누수)',
-          severity: 'high',
-          line: lineNum,
-          description: '동적으로 할당한 메모리를 해제하지 않으면 메모리 누수가 발생합니다.',
-          impact: '장시간 실행되는 프로그램의 경우 메모리가 점진적으로 소진되어 성능 저하나 크래시를 일으킵니다.',
-          recommendation: 'malloc()으로 할당한 모든 메모리는 반드시 free()로 해제하세요.',
-          originalCode: badCodeLine.trim(),
-          fixedCode: badCodeLine + '\n// ... 사용 후 ...\nfree(ptr);\nptr = NULL;',
-          reference: 'CWE-401 - Missing Release of Memory after Effective Lifetime'
+          fixedCode: 'logger.error("An error occurred", e); // 로그에만 기록',
+          reference: 'OWASP - Improper Error Handling'
         });
       }
     }
     
-    const totalVulns = vulnerabilities.length;
-    const criticalCount = vulnerabilities.filter(v => v.severity === 'critical').length;
-    const highCount = vulnerabilities.filter(v => v.severity === 'high').length;
-    const mediumCount = vulnerabilities.filter(v => v.severity === 'medium').length;
-    const lowCount = vulnerabilities.filter(v => v.severity === 'low').length;
-    
-    let securityScore = 100;
-    if (totalVulns > 0) {
-      securityScore = Math.max(0, 100 - (criticalCount * 30 + highCount * 20 + mediumCount * 10 + lowCount * 5));
-    }
+    const score = Math.max(0, 100 - (vulnerabilities.length * 20));
+    const stats = {
+      critical: vulnerabilities.filter(v => v.severity === 'critical').length,
+      high: vulnerabilities.filter(v => v.severity === 'high').length,
+      medium: vulnerabilities.filter(v => v.severity === 'medium').length,
+      low: vulnerabilities.filter(v => v.severity === 'low').length
+    };
     
     let fixedCode = inputCode;
     vulnerabilities.forEach(vuln => {
-      if (vuln.originalCode && vuln.fixedCode) {
+      if (vuln.originalCode) {
         fixedCode = fixedCode.replace(vuln.originalCode, vuln.fixedCode);
       }
     });
     
     setResult({
-      isVulnerable: totalVulns > 0,
+      isVulnerable: vulnerabilities.length > 0,
       vulnerabilities,
       fixedCode,
-      securityScore,
-      scanTime: '2.1s',
-      statistics: {
-        critical: criticalCount,
-        high: highCount,
-        medium: mediumCount,
-        low: lowCount
-      }
+      securityScore: score,
+      scanTime: '2.3s',
+      statistics: stats
     });
     
     setIsAnalyzing(false);
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    if (score >= 40) return 'text-orange-400';
-    return 'text-red-400';
-  };
-
-  const getSeverityBadgeColor = (severity) => {
-    const colors = {
-      critical: 'bg-red-500/20 text-red-300 border-red-500',
-      high: 'bg-orange-500/20 text-orange-300 border-orange-500',
-      medium: 'bg-yellow-500/20 text-yellow-300 border-yellow-500',
-      low: 'bg-blue-500/20 text-blue-300 border-blue-500'
-    };
-    return colors[severity] || colors.low;
-  };
-
-  const handleCopyCode = async () => {
-    if (result?.fixedCode) {
-      try {
-        await navigator.clipboard.writeText(result.fixedCode);
-        setNotificationMessage('수정된 코드가 클립보드에 복사되었습니다');
-        setShowCopyNotification(true);
-        setTimeout(() => setShowCopyNotification(false), 3000);
-      } catch (err) {
-        console.error('복사 실패:', err);
-        alert('클립보드 복사에 실패했습니다.');
-      }
+  // 스크롤 동기화
+  const handleScroll = (e) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.target.scrollTop;
     }
   };
 
-  const downloadReport = () => {
-    if (!result) return;
-    
-    const reportContent = `
-==============================================
-🛡️ AEGIS AI 보안 분석 리포트
-==============================================
-
-📊 보안 점수: ${result.securityScore}/100
-⏱️ 스캔 시간: ${result.scanTime}
-🔍 프로그래밍 언어: ${language}
-
-📈 취약점 통계:
-  - Critical: ${result.statistics.critical}개
-  - High: ${result.statistics.high}개
-  - Medium: ${result.statistics.medium}개
-  - Low: ${result.statistics.low}개
-
-==============================================
-🚨 발견된 취약점
-==============================================
-
-${result.vulnerabilities.map((vuln, idx) => `
-[${idx + 1}] ${vuln.title}
-─────────────────────────────────────────────
-📌 유형: ${vuln.type}
-⚠️ 심각도: ${vuln.severity.toUpperCase()}
-📍 라인: ${vuln.line}
-
-📝 설명:
-${vuln.description}
-
-💥 보안 영향:
-${vuln.impact}
-
-✅ 수정 방법:
-${vuln.recommendation}
-
-❌ 취약한 코드:
-${vuln.originalCode}
-
-✓ 수정된 코드:
-${vuln.fixedCode}
-
-📚 참고: ${vuln.reference}
-`).join('\n')}
-
-==============================================
-✨ 전체 수정된 코드
-==============================================
-
-${result.fixedCode}
-
-==============================================
-생성일시: ${new Date().toLocaleString('ko-KR')}
-==============================================
-    `.trim();
-    
-    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `aegis_security_report_${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    setNotificationMessage('리포트가 다운로드되었습니다');
-    setShowCopyNotification(true);
-    setTimeout(() => setShowCopyNotification(false), 3000);
-  };
-
-  const handleScroll = () => {
-    if (textareaRef.current && lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
-    }
-  };
-
+  // 라인 넘버 생성
   const renderLineNumbers = () => {
     const lines = inputCode.split('\n');
     return lines.map((_, idx) => {
       const lineNum = idx + 1;
-      const isVulnerable = vulnerableLines.has(lineNum);
+      const isVuln = vulnerableLines.has(lineNum);
       const isSafe = safeLines.has(lineNum);
       
       return (
         <div
           key={lineNum}
-          className={`h-6 px-2 text-right text-xs select-none transition-colors ${
-            isVulnerable
-              ? 'bg-red-500/20 text-red-400 font-bold'
-              : isSafe
-              ? 'text-slate-600'
-              : 'text-slate-700'
+          className={`px-2 text-right select-none leading-6 ${
+            isVuln ? 'bg-red-500/10 text-red-400 font-bold' :
+            isSafe ? 'text-slate-600' :
+            'text-slate-700'
           }`}
         >
           {lineNum}
@@ -404,130 +304,162 @@ ${result.fixedCode}
     });
   };
 
+  // Severity 색상
+  const getSeverityBadgeColor = (severity) => {
+    switch(severity) {
+      case 'critical': return 'border-red-500 bg-red-500/10 text-red-400';
+      case 'high': return 'border-orange-500 bg-orange-500/10 text-orange-400';
+      case 'medium': return 'border-yellow-500 bg-yellow-500/10 text-yellow-400';
+      case 'low': return 'border-blue-500 bg-blue-500/10 text-blue-400';
+      default: return 'border-slate-500 bg-slate-500/10 text-slate-400';
+    }
+  };
+
+  // Score 색상
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-yellow-400';
+    if (score >= 40) return 'text-orange-400';
+    return 'text-red-400';
+  };
+
+  // 코드 복사
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(result.fixedCode);
+    setNotificationMessage('수정된 코드가 복사되었습니다! ✨');
+    setShowCopyNotification(true);
+    setTimeout(() => setShowCopyNotification(false), 2000);
+  };
+
+  // 리포트 다운로드
+  const downloadReport = () => {
+    const report = `=== AegisAI 보안 분석 리포트 ===\n\n` +
+      `분석 언어: ${language}\n` +
+      `보안 점수: ${result.securityScore}/100\n` +
+      `스캔 시간: ${result.scanTime}\n\n` +
+      `=== 발견된 취약점 (${result.vulnerabilities.length}개) ===\n\n` +
+      result.vulnerabilities.map((v, i) => 
+        `${i+1}. ${v.title} (${v.type})\n` +
+        `   심각도: ${v.severity}\n` +
+        `   라인: ${v.line}\n` +
+        `   설명: ${v.description}\n` +
+        `   수정방법: ${v.recommendation}\n\n`
+      ).join('') +
+      `=== 수정된 코드 ===\n\n${result.fixedCode}`;
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aegis-report-${Date.now()}.txt`;
+    a.click();
+    
+    setNotificationMessage('리포트 다운로드 완료! 📥');
+    setShowCopyNotification(true);
+    setTimeout(() => setShowCopyNotification(false), 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
       {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur border-b border-slate-800 sticky top-0 z-40">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
-                <Shield className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  AEGIS AI
-                </h1>
-                <p className="text-xs text-slate-400">AI-Powered Code Security Scanner</p>
-              </div>
+      <header className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-800 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+              <Shield className="w-6 h-6 text-white" />
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="flex items-center gap-1 px-3 py-1 bg-slate-800 rounded-lg">
-                  <Zap className="w-4 h-4 text-yellow-400" />
-                  <span className="text-slate-400">토큰:</span>
-                  <span className="font-mono text-white">{tokenCount.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center gap-1 px-3 py-1 bg-slate-800 rounded-lg">
-                  <Code className="w-4 h-4 text-blue-400" />
-                  <span className="text-slate-400">문자:</span>
-                  <span className="font-mono text-white">{characterCount.toLocaleString()}</span>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                AegisAI
+              </h1>
+              <p className="text-xs text-slate-500">AI 기반 보안 취약점 분석</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-lg">
+              <Zap className="w-4 h-4 text-yellow-400" />
+              <span className="text-slate-400">토큰:</span>
+              <span className="font-mono font-bold text-yellow-400">{tokenCount}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-lg">
+              <Code className="w-4 h-4 text-blue-400" />
+              <span className="text-slate-400">문자:</span>
+              <span className="font-mono font-bold text-blue-400">{characterCount}</span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-[1800px] mx-auto p-6 flex gap-6 h-[calc(100vh-88px)]">
-        {/* Left Panel - Code Input (50%) */}
-        <div className="w-1/2 flex flex-col gap-4">
-          {/* Language Selector */}
-          <div className="flex items-center gap-3 bg-slate-900 rounded-xl border border-slate-800 p-3">
-            <span className="text-sm text-slate-400 font-semibold">언어:</span>
-            <div className="flex gap-2">
-              {['Java', 'C', 'C++'].map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    language === lang
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                  }`}
-                >
-                  {lang}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Code Editor */}
-          <div className="flex-1 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex flex-col">
-            <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-              <h3 className="font-semibold text-white text-sm flex items-center gap-2">
-                <Code className="w-4 h-4 text-blue-400" />
-                코드 입력
-              </h3>
+      <main className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-2 gap-6 h-[calc(100vh-88px)]">
+        {/* Left Panel */}
+        <div className="flex flex-col gap-4 overflow-hidden">
+          {/* Analyze Button */}
+          <div className="flex gap-3 flex-shrink-0">
+            {/* Java 고정 표시 */}
+            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-white flex items-center gap-2">
+              <Code className="w-4 h-4 text-blue-400" />
+              <span className="font-semibold">Java</span>
+              <span className="text-xs text-slate-500 ml-auto">언어 고정</span>
             </div>
             
+            <button
+              onClick={analyzeCode}
+              disabled={isAnalyzing || !inputCode.trim()}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-2 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  분석 중...
+                </>
+              ) : (
+                <>
+                  <Shield className="w-4 h-4" />
+                  취약점 분석
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Code Input */}
+          <div className="flex-1 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex flex-col">
+            <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between flex-shrink-0">
+              <h3 className="font-semibold text-white text-sm">코드 입력</h3>
+              <span className="text-xs text-slate-500">
+                {vulnerableLines.size > 0 && (
+                  <span className="text-red-400 font-semibold">
+                    {vulnerableLines.size}개 취약 라인 감지
+                  </span>
+                )}
+              </span>
+            </div>
             <div className="flex-1 flex overflow-hidden">
-              {/* Line Numbers */}
               <div
                 ref={lineNumbersRef}
-                className="overflow-hidden bg-slate-800/30 border-r border-slate-700"
-                style={{ overflowY: 'hidden' }}
+                className="bg-slate-800/30 overflow-hidden flex-shrink-0 w-12 text-xs"
               >
                 {renderLineNumbers()}
               </div>
-              
-              {/* Code Textarea */}
               <textarea
                 ref={textareaRef}
                 value={inputCode}
                 onChange={(e) => setInputCode(e.target.value)}
                 onScroll={handleScroll}
-                placeholder={`${language} 코드를 입력하세요...\n\n예시 (SQL Injection):\nString query = "SELECT * FROM users WHERE id=" + userId;\nStatement stmt = conn.createStatement();\nResultSet rs = stmt.executeQuery(query);`}
-                className="flex-1 bg-transparent text-white font-mono text-sm p-4 resize-none focus:outline-none placeholder:text-slate-600 leading-6"
-                spellCheck="false"
+                placeholder="분석할 코드를 입력하세요..."
+                className="flex-1 bg-transparent text-white font-mono text-sm p-3 focus:outline-none resize-none leading-6"
+                spellCheck={false}
               />
             </div>
           </div>
-
-          {/* Analyze Button */}
-          <div className="flex gap-3">
-            <button
-              onClick={analyzeCode}
-              disabled={isAnalyzing || !inputCode.trim()}
-              className={`flex-1 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
-                isAnalyzing || !inputCode.trim()
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-500/30'
-              }`}
-            >
-              {isAnalyzing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  <span>분석 중...</span>
-                </>
-              ) : (
-                <>
-                  <Shield className="w-4 h-4" />
-                  <span>취약점 분석 시작</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
 
-        {/* Right Panel - Results (50%) */}
-        <div className="w-1/2 flex flex-col gap-4 overflow-hidden">
+        {/* Right Panel */}
+        <div className="flex flex-col gap-4 overflow-hidden">
           {/* Security Score Card */}
           {result && (
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 flex-shrink-0">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
                 {/* Score Circle */}
                 <div className="relative w-24 h-24 flex-shrink-0">
                   <svg className="w-full h-full transform -rotate-90">
@@ -667,18 +599,43 @@ ${result.fixedCode}
                           <p className="text-slate-300 leading-relaxed">{vuln.recommendation}</p>
                         </div>
                         
-                        {/* Code Comparison */}
+                        {/* 🆕 Code Comparison with XAI */}
                         <div className="grid grid-cols-2 gap-2">
+                          {/* 취약한 코드 - 클릭 가능 */}
                           <div>
-                            <h5 className="text-xs font-semibold text-red-400 mb-2">❌ 취약한 코드</h5>
-                            <div className="bg-red-500/10 border border-red-500/30 rounded p-2 overflow-x-auto">
-                              <pre className="text-xs text-red-200 font-mono whitespace-pre-wrap break-all">{vuln.originalCode}</pre>
+                            <h5 className="text-xs font-semibold text-red-400 mb-2 flex items-center gap-1">
+                              ❌ 취약한 코드
+                              <Lightbulb className="w-3 h-3 text-yellow-400" />
+                            </h5>
+                            <div 
+                              className="bg-red-500/10 border border-red-500/30 rounded p-2 overflow-x-auto cursor-pointer hover:bg-red-500/20 hover:border-red-500/50 transition-all group/vuln"
+                              onClick={() => showXAIExplanation(vuln, 'detection')}
+                              title="클릭하여 AI 설명 보기"
+                            >
+                              <pre className="text-xs text-red-200 font-mono whitespace-pre-wrap break-all group-hover/vuln:text-red-100">{vuln.originalCode}</pre>
+                              <div className="text-xs text-red-400 mt-1 opacity-0 group-hover/vuln:opacity-100 transition-opacity flex items-center gap-1">
+                                <Lightbulb className="w-3 h-3" />
+                                왜 취약한가요?
+                              </div>
                             </div>
                           </div>
+                          
+                          {/* 수정된 코드 - 클릭 가능 */}
                           <div>
-                            <h5 className="text-xs font-semibold text-green-400 mb-2">✓ 수정된 코드</h5>
-                            <div className="bg-green-500/10 border border-green-500/30 rounded p-2 overflow-x-auto">
-                              <pre className="text-xs text-green-200 font-mono whitespace-pre-wrap break-all">{vuln.fixedCode}</pre>
+                            <h5 className="text-xs font-semibold text-green-400 mb-2 flex items-center gap-1">
+                              ✓ 수정된 코드
+                              <Lightbulb className="w-3 h-3 text-yellow-400" />
+                            </h5>
+                            <div 
+                              className="bg-green-500/10 border border-green-500/30 rounded p-2 overflow-x-auto cursor-pointer hover:bg-green-500/20 hover:border-green-500/50 transition-all group/fix"
+                              onClick={() => showXAIExplanation(vuln, 'fix')}
+                              title="클릭하여 AI 설명 보기"
+                            >
+                              <pre className="text-xs text-green-200 font-mono whitespace-pre-wrap break-all group-hover/fix:text-green-100">{vuln.fixedCode}</pre>
+                              <div className="text-xs text-green-400 mt-1 opacity-0 group-hover/fix:opacity-100 transition-opacity flex items-center gap-1">
+                                <Lightbulb className="w-3 h-3" />
+                                어떻게 수정했나요?
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -704,6 +661,60 @@ ${result.fixedCode}
           <span className="font-semibold">{notificationMessage}</span>
         </div>
       )}
+
+      {/* 🆕 XAI Explanation Popup Toast */}
+      {xaiPopup.show && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-2xl shadow-2xl border-2 border-blue-500/50 animate-slide-down z-50">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+                <Lightbulb className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">{xaiPopup.title}</h3>
+                <p className="text-xs text-slate-400">{xaiPopup.modelInfo}</p>
+              </div>
+            </div>
+            <button
+              onClick={closeXAIPopup}
+              className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-slate-700 rounded"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Content */}
+          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+            <pre className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+              {xaiPopup.content}
+            </pre>
+          </div>
+          
+          {/* Footer */}
+          <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+            <span>💡 설명 가능한 AI</span>
+            <span>8초 후 자동으로 닫힙니다</span>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slide-down {
+          from { opacity: 0; transform: translate(-50%, -20px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+        .animate-slide-down {
+          animation: slide-down 0.4s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
