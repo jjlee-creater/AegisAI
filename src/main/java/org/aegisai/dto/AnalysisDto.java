@@ -12,10 +12,6 @@ public class AnalysisDto {
 
     @Getter
     @Setter
-    private String language;
-
-    @Getter
-    @Setter
     private String fixedcode;
 
 }

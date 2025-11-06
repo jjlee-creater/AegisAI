@@ -26,7 +26,7 @@ public class ApiService {
     @Autowired
     public ApiService(WebClient.Builder webClientBuilder,
                       AnalysisRepository analysisRepository,
-                      VulnerabilityRepository vulnerabilityRepository) {
+                                  Repository vulnerabilityRepository) {
         WebClient webClient_model1 = webClientBuilder //codebert
                 .baseUrl("https://api-inference.huggingface.co/models/mrm8488/codebert-base-finetuned-detect-insecure-code")
                 .build();
