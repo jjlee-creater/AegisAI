@@ -33,7 +33,7 @@ public class ApiService {
                 .baseUrl("https://api-inference.huggingface.co/models/mrm8488/codebert-base-finetuned-detect-insecure-code")
                 .build();
         WebClient webClient_model2 = webClientBuilder
-                .baseUrl("https://38b4f941-fec7-45cf-8e5e-0bbf1bf2336d.mock.pstmn.io")
+                .baseUrl("http://34.47.124.100:8000")
                 .build();
         WebClient webClient_model3 = webClientBuilder
                 .baseUrl("https://38b4f941-fec7-45cf-8e5e-0bbf1bf2336d.mock.pstmn.io")
