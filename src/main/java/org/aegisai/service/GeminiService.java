@@ -46,8 +46,7 @@ public class GeminiService {
                     "당신은 Java 보안 분석 전문가입니다.\n\n" +
                             "# 분석 대상 코드:\n```java\n{SOURCE_CODE}\n```\n\n" + vulnerableCode,
                     "# AI 모델(CodeBERT) 분석 결과:\n- " +
-                            "판단: {PREDICTION}\n- " +
-                            "신뢰도: {CONFIDENCE}%\n\n" +
+                            "판단: {Label_1}\n- " +
                             "# 요청사항:\n위 코드가 '{PREDICTION}'로 분류된 기술적 근거를 설명해주세요.\n\n" +
                             "다음 JSON 형식으로 응답해주세요:\n{\n  \"reasoning\": \"" +
                             "CodeBERT가 이 코드를 {PREDICTION}로 판단한 주요 이유 (150자 이내)\",\n  \"" +
@@ -57,7 +56,7 @@ public class GeminiService {
                             "3\"\n  ],\n  \"riskFactors\": [\n    \"발견된 보안 위험 요소 " +
                             "1\",\n    \"발견된 보안 위험 요소 " +
                             "2\"\n  ],\n  \"confidence\": \"" +
-                            "신뢰도가 {CONFIDENCE}%인 이유에 대한 간단한 설명\"\n}\n\n" +
+                           // "신뢰도가 {CONFIDENCE}%인 이유에 대한 간단한 설명\"\n}\n\n" +
                             "주의사항:\n- JSON만 응답하고 다른 텍스트는 포함하지 마세요\n- " +
                             "마크다운 코드 블록(```)을 사용하지 마세요\n- 기술적이고 구체적으로 설명하세요",
                     vulnerableCode
