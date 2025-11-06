@@ -16,10 +16,13 @@ public class ResponseDto {
     private String message;
 
     private Integer llmresponse1;
-
+    //vulnerable status
     private String llmresponse2;
-
+    //fixed code
     private String llmresponse3;
+    //vulnerable reason
+    private String llmresponse3_1;
+    //fix reason
 
     private List<VulnerabilitiesDto> vulnerabilities;
 

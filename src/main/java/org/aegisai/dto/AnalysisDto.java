@@ -14,7 +14,9 @@ public class AnalysisDto {
     @Setter
     private String language;
 
-
+    @Getter
+    @Setter
+    private String fixedcode;
 
 }
 

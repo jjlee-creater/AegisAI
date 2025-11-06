@@ -34,10 +34,11 @@ public class ApiController {
         else {
             body = new ResponseDto("VULNERABLE", "취약한 코드입니다.",1);
         }
-        body.setLlmresponse3(apiService.requestModel3(analysisDto)); //llm
+        body.setLlmresponse3(apiService.requestModel3(analysisDto)); //llm(프롬프트 필요)
         body.setLlmresponse2(apiService.requestModel2(analysisDto)); //code t5
-        body.setLlmresponse3(apiService.requestModel3(analysisDto)); //llm
+        body.setLlmresponse3_1(apiService.requestModel3_1(analysisDto)); //llm(프롬프트 필요)
         List<VulnerabilitiesDto> vulnerabilities = apiService.entityService(apiService.requestModel4(analysisDto), analysisDto); //guide llm
+        //프롬프트 필요
         body.setVulnerabilities(vulnerabilities);
 
         return body;
