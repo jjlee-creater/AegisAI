@@ -15,8 +15,8 @@ RUN apt-get update && \
 WORKDIR /workspace
 
 # Gradle 캐시를 활용하기 위해 빌드 파일 먼저 복사
-#COPY build.gradle settings.gradle gradlew ./
-#COPY .gradle ./.gradle
+COPY build.gradle settings.gradle gradlew ./
+COPY .gradle ./.gradle
 
 # 전체 프로젝트 소스 코드 복사
 COPY . .
