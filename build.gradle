@@ -39,10 +39,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
 
-    runtimeOnly 'com.mysql:mysql-connector-j' //MySQL 추가
-    implementation 'com.google.cloud:google-cloud-aiplatform:3.47.0' // 최신 버전 확인
+    // PostgreSQL 드라이버로 변경
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    implementation 'com.google.cloud:google-cloud-aiplatform:3.47.0'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
+    compileOnly 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -51,6 +54,7 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
 def webappDir = "$projectDir/src/main/aegis-ai-frontend"
 
 sourceSets {
