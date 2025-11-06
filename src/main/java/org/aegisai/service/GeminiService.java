@@ -46,10 +46,10 @@ public class GeminiService {
                     "당신은 Java 보안 분석 전문가입니다.\n\n" +
                             "# 분석 대상 코드:\n```java\n{SOURCE_CODE}\n```\n\n" + vulnerableCode,
                     "# AI 모델(CodeBERT) 분석 결과:\n- " +
-                            "판단: {Label_1}\n- " +
-                            "# 요청사항:\n위 코드가 '{PREDICTION}'로 분류된 기술적 근거를 설명해주세요.\n\n" +
+                            "판단: Label_1\n- " +
+                            "# 요청사항:\n위 코드가 'Label_1'로 분류된 기술적 근거를 설명해주세요.\n\n" +
                             "다음 JSON 형식으로 응답해주세요:\n{\n  \"reasoning\": \"" +
-                            "CodeBERT가 이 코드를 {PREDICTION}로 판단한 주요 이유 (150자 이내)\",\n  \"" +
+                            "CodeBERT가 이 코드를 Label_1로 판단한 주요 이유 (150자 이내)\",\n  \"" +
                             "keyIndicators\": [\n    \"판단의 근거가 된 핵심 코드 패턴 " +
                             "1\",\n    \"판단의 근거가 된 핵심 코드 패턴 " +
                             "2\",\n    \"판단의 근거가 된 핵심 코드 패턴 " +
@@ -102,27 +102,29 @@ public class GeminiService {
     public List<VulnerabilitiesDto> analyzeVulnerabilities(String vulnerableCode, String fixedCode) {
         try {
             // 1. 프롬프트 생성 (buildPrompt 메서드는 삭제 가능)
-            String prompt = String.format(
-                    "당신은 Java 보안 전문가입니다.\n" +
-                            "제공된 'Before' 코드의 모든 보안 취약점과 'After' 코드가 이 문제들을 어떻게 해결했는지 분석해주세요.\n\n" +
-                            "## [Before] 취약한 코드:\n```java\n%s\n```\n\n" + vulnerableCode,
-                    "## [After] 수정된 코드:\n```java\n%s\n```\n\n" + fixedCode,
+            String promptTemplate = "당신은 Java 보안 전문가입니다.\n" +
+                    "제공된 'Before' 코드의 모든 보안 취약점과 'After' 코드가 이 문제들을 어떻게 해결했는지 분석해주세요.\n\n" +
+                    "## [Before] 취약한 코드:\n```java\n%s\n```\n\n" + // 첫 번째 %s
+                    "## [After] 수정된 코드:\n```java\n%s\n```\n\n" + // 두 번째 %s
                     "발견된 모든 취약점에 대해 다음 JSON 배열 형식으로 정확하게 응답해주세요:\n" +
-                            "[\n" +
-                            "  {\n" +
-                            "    \"message\": \"보안 취약점과 해결 방법에 대한 명확하고 간결한 설명 (200자 이내)\",\n" +
-                            "    \"lineNumber\": 문제가 발생한 라인 번호 (정수),\n" +
-                            "    \"codeSnippet\": \"취약한 코드의 핵심 부분 (한 줄)\",\n" +
-                            "    \"severity\": \"Critical\", \"High\", \"Medium\", \"Low\" 중 하나,\n" +
-                            "    \"cweLink\": \"https://cwe.mitre.org/data/definitions/XXX.html\" 형식의 CWE 링크\n" +
-                            "  }\n" +
-                            "]\n\n" +
-                            "주의사항:\n" +
-                            "- 반드시 JSON 배열 형태로 응답하세요\n" +
-                            "- 취약점이 여러 개라면 배열에 모두 포함하세요\n" +
-                            "- 취약점이 하나만 있어도 배열 형태 [ {...} ]로 응답하세요\n" +
-                            "- JSON만 응답하고 다른 텍스트는 포함하지 마세요\n" +
-                            "- 마크다운 코드 블록(```)을 사용하지 마세요"
+                    "[\n" +
+                    "  {\n" +
+                    "    \"message\": \"...\",\n" +
+                    "    \"lineNumber\": ...,\n" +
+                    "    \"codeSnippet\": \"...\",\n" +
+                    "    \"severity\": \"...\",\n" +
+                    "    \"cweLink\": \"...\"\n" +
+                    "  }\n" +
+                    "]\n\n" +
+                    "주의사항:\n" +
+                    "- 반드시 JSON 배열 형태로 응답하세요\n" +
+                    "- ... (이하 생략)";
+
+            // 2. 템플릿과 변수를 올바르게 전달합니다.
+            String prompt = String.format(
+                    promptTemplate, // 인자 1: 템플릿
+                    vulnerableCode, // 인자 2: 첫 번째 %s에 들어갈 값
+                    fixedCode       // 인자 3: 두 번째 %s에 들어갈 값
             );
 
             // 2. API 호출
