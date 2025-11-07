@@ -306,8 +306,12 @@ export default function EnhancedSecurityChecker() {
     }
     
     const stats = calculateStatistics(vulnerabilities);
-    const score = Math.max(0, 100 - (vulnerabilities.length * 20));
-    
+    const Score = Math.max(0, 100 - (
+          (stats.critical * 20) +
+          (stats.high * 10) +
+          (stats.medium * 5) +
+          (stats.low * 2)
+      ));
     // 간단한 수정 코드 생성 (실제는 백엔드에서 처리)
     let fixedCode = inputCode;
     vulnerabilities.forEach(vuln => {
