@@ -4,14 +4,11 @@ import { scanVulnerability, getTokenCount } from '../api/api';
 
 export default function EnhancedSecurityChecker() {
   const [inputCode, setInputCode] = useState('');
-<<<<<<< Updated upstream
   // const [language, setLanguage] = useState('Java'); // 🔒 Java로 고정
-=======
   const [language, setLanguage] = useState('Java');
 
  // const language = 'Java'; // 🔒 Java로 고정
 
->>>>>>> Stashed changes
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
