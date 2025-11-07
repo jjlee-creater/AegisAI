@@ -4,7 +4,7 @@ import { scanVulnerability, getTokenCount } from '../api/api';
 
 export default function EnhancedSecurityChecker() {
   const [inputCode, setInputCode] = useState('');
-  const language = 'Java'; // 🔒 Java로 고정 
+  const language = 'Java'; // 🔒 Java로 고정 (2라운드 해커톤)
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [tokenCount, setTokenCount] = useState(0);
