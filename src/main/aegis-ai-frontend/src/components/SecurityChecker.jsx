@@ -121,10 +121,10 @@ export default function EnhancedSecurityChecker() {
   // Severity를 한글로 변환
   const getSeverityKorean = (severity) => {
     const map = {
-        'Critical': '치명적',
-        'High': '높음',
-        'Medium': '중간',
-        'Low': '낮음',
+      'Critical': '치명적',
+      'High': '높음',
+      'Medium': '중간',
+      'Low': '낮음',
         'critical': '치명적',
         'high': '높음',
         'medium': '중간',
@@ -340,10 +340,10 @@ export default function EnhancedSecurityChecker() {
   // Statistics 계산 (백엔드에서 안 주는 경우)
   const calculateStatistics = (vulnerabilities) => {
     return {
-      Critical: vulnerabilities.filter(v => v.severity === 'Critical').length,
-      high: vulnerabilities.filter(v => v.severity === 'High').length,
-      medium: vulnerabilities.filter(v => v.severity === 'Medium').length,
-      low: vulnerabilities.filter(v => v.severity === 'Low').length
+      critical: vulnerabilities.filter(v => v.severity === 'critical').length,
+      high: vulnerabilities.filter(v => v.severity === 'high').length,
+      medium: vulnerabilities.filter(v => v.severity === 'medium').length,
+      low: vulnerabilities.filter(v => v.severity === 'low').length
     };
   };
 
