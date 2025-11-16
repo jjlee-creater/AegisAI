@@ -194,7 +194,7 @@ public class ApiService {
         }
     }
 
-    // securityScore 계산 메서드
+    // 🆕securityScore 계산 메서드
     public Integer calculateSecurityScore(List<VulnerabilitiesDto> vulnerabilities) {
         if (vulnerabilities == null || vulnerabilities.isEmpty()) {
             return 100;

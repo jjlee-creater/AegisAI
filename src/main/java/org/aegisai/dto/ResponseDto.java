@@ -20,7 +20,7 @@ public class ResponseDto {
 
     private String fixedCode;
 
-    private Integer securityScore; // securityScore 추가
+    private Integer securityScore; // 🆕securityScore 추가
 
     private String status;
 
