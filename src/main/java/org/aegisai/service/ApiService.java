@@ -108,6 +108,27 @@ public class ApiService {
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
+
+        /*
+        // 🆕 fixed code generate - 변수에 저장
+        String fixedCode = webClient_model2.post()
+                .uri("/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        // 🆕 줄바꿈 처리: \\n을 실제 줄바꿈(\n)으로 변환
+        if (fixedCode != null) {
+            fixedCode = fixedCode.replace("\\n", "\n");
+            // 필요하면 탭 문자도 처리
+            fixedCode = fixedCode.replace("\\t", "\t");
+        }
+
+        return fixedCode;
+         */
+
     }
     public String requestModel3(AnalysisDto analysisDto){
         //judgement reason generate for vulnerable status
