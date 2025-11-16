@@ -41,7 +41,7 @@ public class ApiService {
                 .build();
 
         this.webClient_model2 = webClientBuilder //code t5
-                .baseUrl("http://34.47.124.100:8000")
+                .baseUrl("http://34.50.3.152:8000") //
                 .build();
         
         this.analysisRepository = analysisRepository;
