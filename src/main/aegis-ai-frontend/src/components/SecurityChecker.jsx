@@ -527,7 +527,7 @@ export default function EnhancedSecurityChecker() {
             <div className="flex-1 flex overflow-hidden">
               <div
                 ref={lineNumbersRef}
-                className="bg-slate-800/30 overflow-hidden flex-shrink-0 w-12 text-xs"
+                className="bg-slate-800/30 overflow-hidden flex-shrink-0 w-12 text-xs py-3"
               >
                 {renderLineNumbers()}
               </div>
